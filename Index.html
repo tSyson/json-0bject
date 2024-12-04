@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Student Admission Data Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-blue-300 p-6">
+    <h1 class="text-3xl font-bold text-center text-blue-600 mb-6"> Student Admission Data Visualization</h1>
+
+    <div class="container mx-auto p-24">
+  
+        <div class="grid grid-cols-1 md:grid-cols-1 gap-1">
+        
+            <div class="bg-gray-100 p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2 text-center">Students by District</h2>
+                <canvas id="districtChart"></canvas>
+            </div>
+
+    
+            <div class="bg-gray-100 p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2 text text-center">Students by Gender</h2>
+                <canvas id="genderChart"></canvas>
+                <p class="text-center text-gray-600 mt-4">
+                    This chart visualizes the gender distribution among admitted students.
+                </p>
+            </div>
+
+  
+            <div class="bg-gray-100 p-4 rounded shadow">
+                <h2 class="text-xl font-semibold mb-2 text-center">Students by District (Line Graph)</h2>
+                <canvas id="districtLineChart"></canvas>
+            </div>
+    
+
+        
+          <div class="bg-gray-100 mt-1 p-6 rounded shadow">
+             <h2 class="text-2xl font-bold mb-4 text-gray-800 text text-center">Summary</h2>
+             <div id="summaryInsights" class="mb-4">
+                <h3 class="text-xl font-semibold text-gray-700">Insights:</h3>
+                <ul class="list-disc ml-6 text-gray-600"></ul>
+             <div id="summaryChallenges">
+                <h3 class="text-xl font-semibold text-gray-700">Challenges and Resolutions:</h3>
+                <ul class="list-disc ml-6 text-gray-600"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchData() {
+            const response = await fetch('https://raw.githubusercontent.com/tSyson/json-0bject/main/data.json');
+            const data = await response.json();
+            return data.admissionData.pages.flatMap(page => page.students);
+        }
+
+        function createDistrictChart(students) {
+            const districtCounts = {};
+            students.forEach(student => {
+                const district = student.districtName;
+                districtCounts[district] = (districtCounts[district] || 0) + 1;
+            });
+
+            const labels = Object.keys(districtCounts);
+            const counts = Object.values(districtCounts);
+
+            const ctx = document.getElementById('districtChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Number of Male Students',
+                        data: counts.map(count => count * (students.filter(s => s.gender === 'M').length / students.length)),
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Number of Female Students',
+                        data: counts.map(count => count * (students.filter(s => s.gender === 'F').length / students.length)),
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Students by District (Bar Chart)'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Students'
+                            }
+                        }
+                    }
+                }
+            });
+
+            return districtCounts;
+        }
+
+        function createGenderChart(students) {
+            const genderCounts = { 'Male': 0, 'Female': 0 };
+            students.forEach(student => {
+                genderCounts[student.gender === 'M' ? 'Male' : 'Female']++;
+            });
+
+            const ctx = document.getElementById('genderChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(genderCounts),
+                    datasets: [{
+                        label: 'Number of Students',
+                        data: Object.values(genderCounts),
+                        backgroundColor: ['rgba(255, 99, 132, 0.6)', 'rgba(54, 162, 235, 0.6)'],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Students by Gender'
+                        }
+                    }
+                }
+            });
+
+            return genderCounts;
+        }
+
+        function createDistrictLineGraph(students) {
+            const districtCounts = {};
+            students.forEach(student => {
+                const district = student.districtName;
+                districtCounts[district] = (districtCounts[district] || 0) + 1;
+            });
+
+            const labels = Object.keys(districtCounts);
+            const counts = Object.values(districtCounts);
+
+            const ctx = document.getElementById('districtLineChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Number of Male Students',
+                        data: counts.map(count => count * (students.filter(s => s.gender === 'M').length / students.length)),
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Number of Female Students',
+                        data: counts.map(count => count * (students.filter(s => s.gender === 'F').length / students.length)),
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderWidth: 2,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Students by District (Line Graph)'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Districts'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Students'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateSummary(districtCounts, genderCounts) {
+            const insights = `
+                <li>The district with the highest number of students is "${Object.keys(districtCounts).reduce((a, b) => districtCounts[a] > districtCounts[b] ? a : b)}".</li>
+                <li>The gender distribution shows ${genderCounts.Male} males and ${genderCounts.Female} females.</li>
+            `;
+
+            const challenges = `
+                <li>Fetching nested data from an external source required advanced JSON parsing techniques.</li>
+                <li>Combining different chart types needed precise configurations for clarity and responsiveness.</li>
+            `;
+
+            document.querySelector('#summaryInsights ul').innerHTML = insights;
+            document.querySelector('#summaryChallenges ul').innerHTML = challenges;
+        }
+
+        async function init() {
+            const students = await fetchData();
+            const districtCounts = createDistrictChart(students);
+            const genderCounts = createGenderChart(students);
+            createDistrictLineGraph(students);
+
+            generateSummary(districtCounts, genderCounts);
+        }
+
+        init();
+    </script>
+</body>
+</html>
